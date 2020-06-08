@@ -18,6 +18,20 @@ cfg = dict(
         [7, 6],
     ],
     POS_REWARDS=[[5, 5]],
+    BLOCK=[
+        [2, 1],
+        [2, 2],
+        [2, 3],
+        [2, 4],
+        [2, 6],
+        [2, 7],
+        [2, 8],
+        [3, 4],
+        [4, 4],
+        [5, 4],
+        [6, 4],
+        [7, 4],
+    ],
 )
 
 
@@ -49,11 +63,10 @@ def gen_obs():
 
 
 def set_rewards(obs):
-    negs = [[3, 3], [4, 5], [4, 6], [5, 6], [5, 8], [6, 8], [7, 3], [7, 5], [7, 6]]
     for i, j in cfg["NEG_REWARDS"]:
         obs[i][j].reward = -1
-
-    obs[5][5].reward = 1
+    for i, j in cfg["POS_REWARDS"]:
+        obs[i][j].reward = 1
 
 
 def set_block(obs):
@@ -70,8 +83,6 @@ def valid(i, j, obs):
         return False
     if j < 0 or j >= cfg["COL"]:
         return False
-    # if obs[i][j].blocked:
-    #     return False
     return True
 
 
@@ -92,13 +103,14 @@ def get_neighbors_esum(i, j, obs):
     if len(valid_neighbors_list) == 0:
         return 0
     action_prob = 1 / len(valid_neighbors_list)
-    # For every possible actions except blocked
+
+    # For every possible actions
     for r, c in valid_neighbors_list:
         if valid(r, c, obs):
+            future_reward = obs[r][c].display
             if obs[r][c].blocked:
-                res += action_prob * (obs[i][j].reward + cfg["GAMMA"] * obs[i][j].display)
-            else:
-                res += action_prob * (obs[i][j].reward + cfg["GAMMA"] * obs[r][c].display)
+                future_reward = obs[i][j].display
+            res += action_prob * (obs[i][j].reward + cfg["GAMMA"] * future_reward)
     return res
 
 
@@ -113,18 +125,16 @@ def sweep(obs):
         for j in range(cfg["COL"]):
             obs[i][j].display = obs[i][j].buf
 
-
+# TODO: Set blocks to cfg
+# TODO: Check for covergence
 if __name__ == "__main__":
     obs = gen_obs()
     set_rewards(obs)
     set_block(obs)
 
-    # print(get_neighbors_esum(3, 2, obs))
-
     display(obs)
     for i in range(100):
-        input()
-        print(f"Sweep #{i+1}")
+        print(f"Policy Evaluation Sweep #{i+1}")
         sweep(obs)
         display(obs)
-        # time.sleep(1)
+        time.sleep(1)
