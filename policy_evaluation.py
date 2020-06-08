@@ -18,7 +18,7 @@ cfg = dict(
         [7, 6],
     ],
     POS_REWARDS=[[5, 5]],
-    BLOCK=[
+    BLOCKS=[
         [2, 1],
         [2, 2],
         [2, 3],
@@ -70,12 +70,8 @@ def set_rewards(obs):
 
 
 def set_block(obs):
-    for i in range(8):
-        if i == 4:
-            continue
-        obs[2][i + 1].blocked = True
-    for i in range(5):
-        obs[i + 3][4].blocked = True
+    for i, j in cfg["BLOCKS"]:
+        obs[i][j].blocked = True
 
 
 def valid(i, j, obs):
@@ -125,7 +121,6 @@ def sweep(obs):
         for j in range(cfg["COL"]):
             obs[i][j].display = obs[i][j].buf
 
-# TODO: Set blocks to cfg
 # TODO: Check for covergence
 if __name__ == "__main__":
     obs = gen_obs()
