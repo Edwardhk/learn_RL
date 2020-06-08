@@ -32,6 +32,8 @@ cfg = dict(
         [6, 4],
         [7, 4],
     ],
+    CONV=0.001,
+    MAX_ITER=10000
 )
 
 
@@ -111,7 +113,6 @@ def get_neighbors_esum(i, j, obs):
 
 
 def sweep(obs):
-    ## Sweep for dynamics of env
     # Store sweep result to buffer
     for i in range(cfg["ROW"]):
         for j in range(cfg["COL"]):
@@ -121,15 +122,42 @@ def sweep(obs):
         for j in range(cfg["COL"]):
             obs[i][j].display = obs[i][j].buf
 
+
+def diff(current_obs, previous_obs):
+    # for i in np.concatenate(current_obs):
+    #     print(i.display)
+    res = 0.0
+    for i in range(cfg["ROW"]):
+        for j in range(cfg["COL"]):
+            res += current_obs[i][j].display - previous_obs[i][j].display
+    return abs(res)
+
+
+def clone(obs):
+    res = np.empty((cfg["ROW"], cfg["COL"]), dtype=object)
+    for i in range(cfg["ROW"]):
+        for j in range(cfg["COL"]):
+            res[i][j] = Grid()
+            res[i][j].blocked = obs[i][j].blocked
+            res[i][j].display = obs[i][j].display
+            res[i][j].reward = obs[i][j].reward
+            res[i][j].buf = obs[i][j].buf
+    return res
+
+
 # TODO: Check for covergence
 if __name__ == "__main__":
     obs = gen_obs()
     set_rewards(obs)
     set_block(obs)
-
     display(obs)
-    for i in range(100):
+
+    for i in range(cfg["MAX_ITER"]):
         print(f"Policy Evaluation Sweep #{i+1}")
+        old_obs = clone(obs)
         sweep(obs)
-        display(obs)
-        time.sleep(1)
+
+        if(diff(old_obs, obs) < cfg["CONV"]):
+            print(f"Reached convergence after sweep #{i+1}")
+            display(obs)
+            break
