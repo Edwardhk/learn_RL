@@ -33,7 +33,7 @@ cfg = dict(
         [7, 4],
     ],
     CONV=0.001,
-    MAX_ITER=10000
+    MAX_ITER=10000,
 )
 
 
@@ -48,10 +48,12 @@ class Grid:
 def display(obs):
     for i in range(len(obs)):
         for j in range(len(obs[i])):
-            if not obs[i][j].blocked:
+            if not obs[i][j].blocked and obs[i][j].display != 0:
                 print("{0:+.2f}".format(obs[i][j].display), end="\t")
+            elif obs[i][j].blocked:
+                print("*****", end="\t")
             else:
-                print("XXXXX", end="\t")
+                print("-----", end="\t")
         print()
     print()
 
@@ -102,13 +104,19 @@ def get_neighbors_esum(i, j, obs):
         return 0
     action_prob = 1 / len(valid_neighbors_list)
 
+    # Handle goal state differently as treat all the neighbors as starting state ([0][0])
+    if i == 5 and j == 5:
+        return obs[i][j].reward + cfg["GAMMA"] * obs[0][0].display
+
     # For every possible actions
     for r, c in valid_neighbors_list:
         if valid(r, c, obs):
+            instant_reward = obs[i][j].reward
             future_reward = obs[r][c].display
-            if obs[r][c].blocked:
+
+            if obs[r][c].blocked:  # Hit wall and stay
                 future_reward = obs[i][j].display
-            res += action_prob * (obs[i][j].reward + cfg["GAMMA"] * future_reward)
+            res += action_prob * (instant_reward + cfg["GAMMA"] * future_reward)
     return res
 
 
@@ -145,7 +153,6 @@ def clone(obs):
     return res
 
 
-# TODO: Check for covergence
 if __name__ == "__main__":
     obs = gen_obs()
     set_rewards(obs)
@@ -156,8 +163,10 @@ if __name__ == "__main__":
         print(f"Policy Evaluation Sweep #{i+1}")
         old_obs = clone(obs)
         sweep(obs)
+        display(obs)
+        time.sleep(0.01)
 
-        if(diff(old_obs, obs) < cfg["CONV"]):
+        if diff(old_obs, obs) < cfg["CONV"]:
             print(f"Reached convergence after sweep #{i+1}")
             display(obs)
             break
