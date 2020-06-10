@@ -10,7 +10,7 @@ https://cs.stanford.edu/people/karpathy/reinforcejs/gridworld_dp.html
 
 Run the program by
 ```
-policy_evaluation.py
+python policy_evaluation.py
 ```
 
 Result will be visualized in simple heatmap:
