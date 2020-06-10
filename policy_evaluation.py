@@ -38,7 +38,7 @@ cfg = dict(
     ],
     CONV=0.001,
     MAX_ITER=10000,
-    LOOP_MS=0.1,
+    LOOP_SECOND=0.1,
     PRECISION=3,
 )
 
@@ -213,7 +213,7 @@ def update_gui_val(btn_list, old_obs, obs):
         sweep(obs)
         update_btn(btn_list, obs, old_obs)
         app.update()
-        time.sleep(cfg["LOOP_MS"])
+        time.sleep(cfg["LOOP_SECOND"])
 
         if diff(old_obs, obs) < cfg["CONV"]:
             print(f"Reached convergence after #{i}")
