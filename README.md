@@ -18,7 +18,7 @@ Result will be visualized in simple heatmap:
 ![hippo](./img/Policy-Evaluation-Demo.gif)
 
 
-Default configuration:
+#### Default configuration:
 
 | Attribute | Value | Description |
 |-----------|-------|-------------|
@@ -31,7 +31,7 @@ Default configuration:
 |LOOP_MS|0.1|Refresh second for each sweep|
 |PRECISION|3|Precision used to calculate difference (for flashing color ONLY)| 
 
-Special considerations:
+#### Special considerations:
 
 `Start State: [0][0], Goal State: [5][5]`
 1. If the next state `(s')` hits the wall, stay action will be performed and the reward for next state will be equal to starting state `(s)`
