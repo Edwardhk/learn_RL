@@ -5,9 +5,6 @@ import tkinter
 
 app = tkinter.Tk()
 app.title("Policy Evaluation")
-np.set_printoptions(
-    edgeitems=30, linewidth=100000, formatter=dict(float=lambda x: "%.3g" % x)
-)
 cfg = dict(
     ROW=10,
     COL=10,
@@ -42,6 +39,7 @@ cfg = dict(
     CONV=0.001,
     MAX_ITER=10000,
     LOOP_MS=0.1,
+    PRECISION=3,
 )
 
 
@@ -174,27 +172,35 @@ def init_btns(arr2d):
     return btn_list
 
 
-def update_btn(btn_list, obs):
+def update_btn(btn_list, obs, old_obs):
     attr = list(o.display for o in obs.flatten())
     min_val = min(attr)
     for i in range(len(btn_list)):
         for j in range(len(btn_list[i])):
             obs_val = obs[i][j].display
 
+            # Change fg color if changed
+            if round(obs[i][j].display, cfg["PRECISION"]) != round(old_obs[i][j].display, cfg["PRECISION"]):
+                fg = "black"
+            else:
+                fg = "grey"
+
+            # Change color according to gradient / walls
             if obs_val > 0:
-                color = (0, 204, 0)
+                bg = (0, 204, 0)
             elif obs_val != 0:
-                color = (
+                bg = (
                     255,
                     255 - int(obs_val / min_val * 255),
                     255 - int(obs_val / min_val * 255),
                 )
             else:
-                color = (255, 255, 255)
+                bg = (255, 255, 255)
 
             if not obs[i][j].blocked:
-                btn_list[i][j]["text"] = "{:.2f}".format(obs[i][j].display)
-                btn_list[i][j]["bg"] = "#%02x%02x%02x" % color
+                btn_list[i][j]["text"] = round(obs[i][j].display, cfg["PRECISION"])
+                btn_list[i][j]["bg"] = "#%02x%02x%02x" % bg
+                btn_list[i][j]["fg"] = fg
             else:  # draw for block
                 btn_list[i][j]["text"] = ""
                 btn_list[i][j]["bg"] = "black"
@@ -205,7 +211,7 @@ def update_gui_val(btn_list, old_obs, obs):
         print(f"Policy Evaluation #{i}")
         old_obs = clone(obs)
         sweep(obs)
-        update_btn(btn_list, obs)
+        update_btn(btn_list, obs, old_obs)
         app.update()
         time.sleep(cfg["LOOP_MS"])
 
