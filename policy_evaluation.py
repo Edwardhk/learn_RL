@@ -1,6 +1,13 @@
 import numpy as np
 import time
+import threading
+import tkinter
 
+app = tkinter.Tk()
+app.title("Policy Evaluation")
+np.set_printoptions(
+    edgeitems=30, linewidth=100000, formatter=dict(float=lambda x: "%.3g" % x)
+)
 cfg = dict(
     ROW=10,
     COL=10,
@@ -34,6 +41,7 @@ cfg = dict(
     ],
     CONV=0.001,
     MAX_ITER=10000,
+    LOOP_MS=0.1,
 )
 
 
@@ -132,8 +140,6 @@ def sweep(obs):
 
 
 def diff(current_obs, previous_obs):
-    # for i in np.concatenate(current_obs):
-    #     print(i.display)
     res = 0.0
     for i in range(cfg["ROW"]):
         for j in range(cfg["COL"]):
@@ -153,20 +159,73 @@ def clone(obs):
     return res
 
 
-if __name__ == "__main__":
-    obs = gen_obs()
-    set_rewards(obs)
-    set_block(obs)
-    display(obs)
+###### GUI methods below ######
+def init_btns(arr2d):
+    btn_list = []
+    for i in range(cfg["ROW"]):
+        tmp = []
+        for j in range(cfg["COL"]):
+            b = tkinter.Button(app, text=arr2d[i][j])
+            b.config(height=4, width=8, borderwidth=0)
+            b.grid(row=i, column=j)
+            tmp.append(b)
+        btn_list.append(tmp)
 
+    return btn_list
+
+
+def update_btn(btn_list, obs):
+    attr = list(o.display for o in obs.flatten())
+    min_val = min(attr)
+    for i in range(len(btn_list)):
+        for j in range(len(btn_list[i])):
+            obs_val = obs[i][j].display
+
+            if obs_val > 0:
+                color = (0, 204, 0)
+            elif obs_val != 0:
+                color = (
+                    255,
+                    255 - int(obs_val / min_val * 255),
+                    255 - int(obs_val / min_val * 255),
+                )
+            else:
+                color = (255, 255, 255)
+
+            if not obs[i][j].blocked:
+                btn_list[i][j]["text"] = "{:.2f}".format(obs[i][j].display)
+                btn_list[i][j]["bg"] = "#%02x%02x%02x" % color
+            else:  # draw for block
+                btn_list[i][j]["text"] = ""
+                btn_list[i][j]["bg"] = "black"
+
+
+def update_gui_val(btn_list, old_obs, obs):
     for i in range(cfg["MAX_ITER"]):
-        print(f"Policy Evaluation Sweep #{i+1}")
+        print(f"Policy Evaluation #{i}")
         old_obs = clone(obs)
         sweep(obs)
-        display(obs)
-        time.sleep(0.01)
+        update_btn(btn_list, obs)
+        app.update()
+        time.sleep(cfg["LOOP_MS"])
 
         if diff(old_obs, obs) < cfg["CONV"]:
-            print(f"Reached convergence after sweep #{i+1}")
-            display(obs)
-            break
+            print(f"Reached convergence after #{i}")
+            app.destroy()
+
+
+if __name__ == "__main__":
+    obs = gen_obs()
+    old_obs = clone(obs)
+    set_rewards(obs)
+    set_block(obs)
+
+    btn_list = init_btns(np.zeros((cfg["ROW"], cfg["COL"])))
+    update_thread = threading.Thread(
+        target=update_gui_val,
+        kwargs={"btn_list": btn_list, "old_obs": old_obs, "obs": obs},
+    )
+    update_thread.daemon = True
+    update_thread.start()
+
+    app.mainloop()
