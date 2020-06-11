@@ -8,8 +8,9 @@ app.title("Policy Evaluation")
 cfg = dict(
     ROW=10,
     COL=10,
-    ALPHA=0.8,
+    ALPHA=0.5,
     GAMMA=0.9,
+    EPSILON=0.3,
     ACTION_DIM=4,
     NEG_REWARDS=[
         [3, 3],
@@ -37,10 +38,9 @@ cfg = dict(
         [6, 4],
         [7, 4],
     ],
-    MAX_ITER=10000,
+    MAX_ITER=100000,
     LOOP_SECOND=0.01,
     PRECISION=3,
-    EPSILON=0.2,
 )
 currentX = 5
 currentY = 5
@@ -143,7 +143,7 @@ def init_btns(arr2d):
     for i in range(cfg["ROW"]):
         tmp = []
         for j in range(cfg["COL"]):
-            b = tkinter.Button(app, text=arr2d[i][j])
+            b = tkinter.Label(app, text=arr2d[i][j])
             b.config(height=4, width=8, borderwidth=0)
             b.grid(row=i, column=j)
             tmp.append(b)
@@ -155,43 +155,45 @@ def init_btns(arr2d):
 def update_btn(btn_list, obs):
     attr = list(o.display for o in obs.flatten())
     min_val = min(attr)
-    for i in range(len(btn_list)):
-        for j in range(len(btn_list[i])):
-            obs_val = obs[i][j].display
 
-            if(i == currentX and j == currentY):
-                btn_list[i][j]["fg"] = "yellow"
-            else:
-                btn_list[i][j]["fg"] = "black"
+    i = currentX
+    j = currentY
+    obs_val = obs[i][j].display
 
-            # Change color according to gradient / walls
-            if obs_val > 0:
-                bg = (0, 204, 0)
-            elif obs_val != 0:
-                bg = (
-                    255,
-                    255 - int(obs_val / min_val * 255),
-                    255 - int(obs_val / min_val * 255),
-                )
-            else:
-                bg = (255, 255, 255)
+    # Change color according to gradient / walls
+    if obs_val > 0:
+        bg = (0, 204, 0)
+    elif obs_val != 0:
+        bg = (
+            255,
+            255 - int(obs_val / min_val * 255),
+            255 - int(obs_val / min_val * 255),
+        )
+    else:
+        bg = (255, 255, 255)
 
-            if not obs[i][j].blocked:
-                btn_list[i][j]["text"] = round(obs[i][j].display, cfg["PRECISION"])
-                btn_list[i][j]["bg"] = "#%02x%02x%02x" % bg
-            else:  # draw for block
-                btn_list[i][j]["text"] = ""
-                btn_list[i][j]["bg"] = "black"
+    btn_list[i][j]["text"] = round(obs[i][j].display, cfg["PRECISION"])
+    btn_list[i][j]["bg"] = "#%02x%02x%02x" % bg
 
 
 def update_gui_val(btn_list, obs):
     global currentX 
-    global currentY 
+    global currentY
+
+    # Draw walls
+    for i in range(cfg["ROW"]):
+        for j in range(cfg["COL"]):
+            if(obs[i, j].blocked):
+                btn_list[i][j]["text"] = ""
+                btn_list[i][j]["bg"] = "black"
+
+
     for i in range(cfg["MAX_ITER"]):
-        print(f"Policy Evaluation #{i}")
+        print(f"SARSA steps #{i}")
         currentX, currentY = sarsa_update(currentX, currentY, obs)
         update_btn(btn_list, obs)
         app.update()
+    input()
     app.destroy()
 
 if __name__ == "__main__":
